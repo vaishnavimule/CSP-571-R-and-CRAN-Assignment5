@@ -1,0 +1,371 @@
+
+
+1.1 Chapter 12
+
+Question 1:
+
+1.a)
+Proof for fig No. 10.12 :
+$$
+\frac{1}{|C_k|} \sum\limits_{i,i^{\prime} \in C_k} \sum\limits_{j=1}^p (x_{ij} - x_{i^\prime j})^2 = 
+2 \sum\limits_{i \in C_k} \sum\limits_{j=1}^{p} (x_{ij} - \bar{x}_{kj})^2
+\\
+= \frac{1}{|C_k|} \sum\limits_{i,i^{\prime} \in C_k} \sum\limits_{j=1}^p ((x_{ij} - \bar{x}_{kj}) - (x_{i^\prime j} - \bar{x}_{kj}))^2
+\\
+= \frac{1}{|C_k|} \sum\limits_{i,i^{\prime} \in C_k} \sum\limits_{j=1}^p ((x_{ij} - \bar{x}_{kj})^2 - 2 (x_{ij} - \bar{x}_{kj})(x_{i^\prime j} - \bar{x}_{kj}) + (x_{i^\prime j} - \bar{x}_{kj})^2)
+\\
+= \frac{|C_k|}{|C_k|} \sum\limits_{i \in C_k} \sum\limits_{j=1}^p (x_{ij} - \bar{x}_{kj})^2 +
+  \frac{|C_k|}{|C_k|} \sum\limits_{i^{\prime} \in C_k} \sum\limits_{j=1}^p (x_{i^\prime j} - \bar{x}_{kj})^2 -
+  \frac{2}{|C_k|} \sum\limits_{i,i^{\prime} \in C_k} \sum\limits_{j=1}^p (x_{ij} - \bar{x}_{kj})(x_{i^\prime j} - \bar{x}_{kj})
+\\
+= 2 \sum\limits_{i \in C_k} \sum\limits_{j=1}^p (x_{ij} - \bar{x}_{kj})^2 + 0
+$$
+1.b)
+
+The equation shown above is used to minimize the sum of the squared Euclidean distance for each cluster. This is equivalent to minimizing the within-cluster variance for each cluster, which is what happens in K-means clustering.
+
+
+Question 2:
+
+2.a)
+
+```{r}
+dstnce_matrix = as.dist(matrix(c(0, 0.3, 0.4, 0.7, 
+                     0.3, 0, 0.5, 0.8,
+                     0.4, 0.5, 0.0, 0.45,
+                     0.7, 0.8, 0.45, 0.0), nrow=4))
+hc_complt=hclust(dstnce_matrix, method="complete")
+
+#Heights where the fusion occurs
+print(hc_complt$height)
+
+plot(hc_complt)
+```
+
+2.b)
+
+```{r}
+
+hclust_1 = hclust(dstnce_matrix, method="single")
+#Heights where the fusion occurs
+print(hclust_1$height)
+
+plot(hclust_1)
+```
+
+2.c)
+
+```{r}
+hclust_complete_cut=cutree(hc_complt,k=2)
+hclust_complete_cut
+```
+The clusters we see from (a) are :
+(1,2), (3,4)
+
+2.d)
+
+```{r}
+
+hclust_single_cut=cutree(hclust_1,k=2)
+hclust_single_cut
+```
+The clusters we see from (b) are :
+(1,2,3), (4)
+
+2.e)
+
+```{r}
+plot(hclust(dstnce_matrix, method="complete"), labels=c(2,1,4,3))
+```
+
+The above dendrogram is equivalent to the dendrogram of (a)
+
+Question 3:
+
+Given observations :
+
+```{r}
+
+set.seed(1)
+x = cbind(c(1, 1, 0, 5, 6, 4), c(4, 3, 4, 1, 2, 0))
+x
+```
+
+3.a)
+
+plotting :
+
+```{r}
+plot(x[,1], x[,2])
+```
+
+3.b)
+
+Assigning labels randomly :
+
+```{r}
+
+labels = sample(2, nrow(x), replace=T)
+labels
+```
+
+3.c)
+
+compute centroid for each cluster :
+
+```{r}
+
+centroid1 = c(mean(x[labels==1, 1]), mean(x[labels==1, 2]))
+centroid2 = c(mean(x[labels==2, 1]), mean(x[labels==2, 2]))
+print(centroid1)
+print(centroid2)
+plot(x[,1], x[,2], col=(labels+1), pch=20, cex=2)
+points(centroid1[1], centroid1[2], col=2, pch=4)
+points(centroid2[1], centroid2[2], col=3, pch=4)
+```
+
+3.d)
+
+assign oservations to centroids clostest with the help of euclidean distances calculated 
+
+```{r}
+euc_dis = function(a, b) {
+  return(sqrt((a[1] - b[1])^2 + (a[2]-b[2])^2))
+}
+
+assn_labels = function(x, centroid1, centroid2) {
+  labels = rep(NA, nrow(x))
+  for (i in 1:nrow(x)) {
+    if (euc_dis(x[i,], centroid1) < euc_dis(x[i,], centroid2)) {
+      labels[i] = 1
+    } else {
+      labels[i] = 2
+    }
+  }
+  return(labels)
+}
+#Function call
+lbls = assn_labels(x, centroid1, centroid2)
+print(lbls)
+
+```
+3.e)
+
+loop till values doen't change :
+
+```{r}
+last_labels = rep(-1, 6)
+while (!all(last_labels == lbls)) {
+  last_labels = lbls
+  centroid1 = c(mean(x[lbls==1, 1]), mean(x[lbls==1, 2]))
+  centroid2 = c(mean(x[lbls==2, 1]), mean(x[lbls==2, 2]))
+  print(centroid1)
+  print(centroid2)
+  lbls = assn_labels(x, centroid1, centroid2)
+}
+print(lbls)
+```
+3.f)
+
+```{r}
+
+plot(x[,1], x[,2], col=(lbls+1), pch=20, cex=2)
+points(centroid1[1], centroid1[2], col=2, pch=4)
+points(centroid2[1], centroid2[2], col=3, pch=4)
+```
+
+Question 4:
+
+4.a)
+
+It is difficult to determine which fusion will occur at a higher position on the tree due to a lack of information. In problem 2 presented earlier, three clusters fused at varying heights, which is dependent on the dissimilarity matrix. If the dissimilarities are identical, they would fuse at the same height, but if not, the single linkage dendrogram would typically fuse at a lower height.
+
+4.b)
+
+The linkage method only impacts how clusters are merged and does not affect how the leaf nodes of the tree merge. The leaf nodes would merge at the same height in both single and complete linkage dendrograms.
+
+
+
+Practicum problems
+
+Problem 1 :
+
+```{r}
+# making scipen=999 to prevent scientific notation when calulating variances and means (to remove e^-2 etc)
+options(scipen = 999)
+#Loading Wine.data
+wine_df=read.csv(url("https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data"),sep=",",header=F)
+column_s=c('Alcohol','Malic acid','Ash','Alcalinity of ash','Magnesium','Total phenols','Flavanoids','Nonflavanoid','phenols','Proanthocyanins','Color intensity','Hue','OD280/OD315 of diluted wines','Proline')
+
+#looking at summary
+summary(wine_df)
+
+colnames(wine_df)=column_s
+
+#checking column names
+print(names(wine_df))
+
+#checking the mean of the columns in data
+print(apply(wine_df, 2, mean))
+
+#checking Variance of the columns in data
+print(apply(wine_df, 2, var))
+
+# Performing PCA using prcomp with scaling of columns
+pr.out=prcomp(wine_df , scale=TRUE)
+
+# Checking values of center, scale and rotation matrix
+print(pr.out$center)
+print(pr.out$scale)
+print(pr.out$rotation)
+
+# Plotting first two principal components
+biplot(pr.out,scale=0)
+
+# making sign change to produce a mirror image
+pr.out$rotation=-pr.out$rotation
+pr.out$x=-pr.out$x
+
+biplot (pr.out , scale =0)
+```
+
+As the feature ash is pointed on the opposite direction of hue it is seen that they are inversely correlated. 
+
+```{r}
+# Calculate variance explained by each principal component
+pr_var=pr.out$sdev ^2
+print(pr_var)
+
+# proportion of variance explained by each principal component
+p=pr_var/sum(pr_var)
+print(p)
+
+#Plot Proportion explained by each PC
+plot(p , xlab=" Principal Component ", ylab="Proportion of Variance Explained ", ylim=c(0,1),type="b")
+plot(cumsum(p), xlab="Principal Component ", ylab="Cumulative Proportion of Variance Explained",ylim=c(0,1),type="b")
+```
+
+The prcomp function is preferred over princomp for numerical computation because it uses n-1 instead of n to perform calculations. Scaling of variables is considered a best practice, even when the deviation of each feature is not large. Scaling helps when a few features have a large variance, as it brings all features onto a unit scale. This ensures that the principal components are not dominated by features with large variance.
+
+Problem 2 :
+
+```{r}
+library(factoextra)
+library(collections)
+set.seed(20)
+#Loading USArrests data
+data("USArrests")
+
+summary(USArrests)
+
+# Checking means and variances of columns
+print(apply(USArrests,2,mean))
+print(apply(USArrests,2,var))
+```
+Applying scaling to the columns is advisable due to the noticeable variance differences between the features. Scaling will standardize all features to a unit normal space. This is important because the K-means algorithm is isotropic, and scaling prevents any one feature with larger magnitudes from exerting undue influence over the algorithm compared to other features.
+
+```{r}
+#Scaling the dataset 
+scaled_data = scale(USArrests,center = TRUE,scale=TRUE)
+
+dict_ss=dict()
+
+iter_in=c(2:10)
+
+# Perform K means clustering for k=2 to k=10 and plot the clusters
+for (val in iter_in){
+  km.out = kmeans(scaled_data,val,nstart = 30)
+  print(km.out$cluster)
+  
+  #Basic plotting for cluster
+  plot(scaled_data, col=(km.out$cluster +1), main=paste("K-Means Clustering
+Results with K=",val,sep=" "), xlab="", ylab="", pch=20, cex=2)
+  
+  #fviz_cluster to visualize clusters
+  print(fviz_cluster(km.out, data = scaled_data,geom = "point",ellipse.type = "convex",ggtheme = theme_bw()))
+  
+  #Store within cluster sum of squares values and the respective K value in a dict
+  w = km.out$tot.withinss
+  dict_ss$set(val,w)
+}
+
+# Create an elbow plot to find the optimal K value
+plot(dict_ss$keys(), dict_ss$values(),
+       type="b", pch = 19, frame = FALSE,xlim = c(2,10),
+       xlab="Number of clusters K",
+       ylab="Total within-clusters sum of squares")
+axis(side = 1, at = c(2:10))
+```
+
+
+ From the above elbow plot we can see that k=4 is the optimal value of k.
+ 
+ Question 3 :
+ 
+```{r}
+library(factoextra)
+library(dplyr)
+#Loading dataset
+
+white_w=read.csv(url("https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv"),header = T,sep=";")
+
+summary(white_w)
+
+#Checking the mean and variance among the available features
+print(apply(white_w,2,mean))
+print(apply(white_w,2,var))
+```
+The free sulfur dioxide and total sulfur dioxide features exhibit the greatest differences in means. Moreover, the variances of these features, as well as those of residual sugar and other features, are significantly larger than those of the remaining features.
+Therefore, it would be beneficial to scale these features to unit normal space, in order to prevent their large magnitudes from disproportionately affecting the algorithm.
+ 
+```{r}
+library(dplyr)
+#Scaling the dataset
+whitew_scaled=scale(white_w,center = TRUE,scale = TRUE)
+#white_wine_scaled=white_wine
+colnames(whitew_scaled)
+
+hclust_1=hclust(dist(whitew_scaled[ , 1:ncol(whitew_scaled)-1]),method = "single")
+plot(hclust_1,cex = 0.3, hang = -1)
+
+hclust_complete=hclust(dist(whitew_scaled[ , 1:ncol(whitew_scaled)-1]),method = "complete")
+plot(hclust_complete, cex = 0.5, hang = -1)
+
+sub_1=cutree(hclust_1,k=2)
+sub_complete=cutree(hclust_complete,k=2)
+
+sub_2=cutree(hclust_1,k=3)
+sub_complete2=cutree(hclust_complete,k=3)
+
+print(table(sub_1))
+print(table(sub_1,white_w$quality))
+print(table(sub_complete))
+print(table(sub_complete,white_w$quality))
+
+print(table(sub_2))
+print(table(sub_2,white_w$quality))
+print(table(sub_complete2))
+print(table(sub_complete2,white_w$quality))
+
+
+sub_single_height = cutree(hclust_1,k=3)
+sub_complete_height = cutree(hclust_complete,k=3)
+
+
+
+```
+        
+
+
+Elbow plot :
+
+```{r}
+fviz_nbclust(whitew_scaled[,1:ncol(whitew_scaled)-1], FUN = hcut, method = "wss")
+
+```
+
+  
+The complete linkage method produces more balanced clustering from the dendrograms above 
+ 
+
+
